@@ -1,0 +1,11 @@
+Django>=4.2,<5.0
+djangorestframework
+django-cors-headers
+django-filter
+python-decouple
+psycopg2-binary
+Pillow
+qrcode[pil]
+celery
+redis
+django-celery-beat
