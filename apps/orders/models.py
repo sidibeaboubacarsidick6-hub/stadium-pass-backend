@@ -102,6 +102,27 @@ class Order(UUIDModel, TimeStampedModel):
             return self.buyer.full_name
         return f"{self.guest_first_name} {self.guest_last_name}".strip()
 
+    def mark_as_paid(self, payment_method='simulated', payment_reference=''):
+        """
+        Marque la commande payée et génère les billets.
+        Idempotent : ne fait rien si déjà PAID.
+        """
+        from django.db import transaction
+        from django.utils import timezone
+
+        with transaction.atomic():
+            locked = type(self).objects.select_for_update().get(pk=self.pk)
+            if locked.status == self.Status.PAID:
+                return False
+
+            locked.status = self.Status.PAID
+            locked.paid_at = timezone.now()
+            locked.save(update_fields=['status', 'paid_at'])
+
+            for item in locked.items.all():
+                item.generate_tickets()
+
+        return True
 
 class OrderItem(TimeStampedModel):
     """Ligne d'une commande (une catégorie de billets + quantité)."""
@@ -132,3 +153,21 @@ class OrderItem(TimeStampedModel):
     def save(self, *args, **kwargs):
         self.subtotal = self.unit_price * self.quantity
         super().save(*args, **kwargs)
+        
+    def generate_tickets(self):
+        """Crée N billets (1 par unité) pour cette ligne de commande."""
+        from apps.tickets.models import Ticket
+
+        order = self.order
+        category = self.category
+
+        for _ in range(self.quantity):
+            Ticket.objects.create(
+                category=category,
+                order_id=order.pk,
+                gate_label=category.gate.name if category.gate else '',
+                block_label=category.block_label,
+                holder_name=order.buyer_name,
+                holder_email=order.buyer_email,
+                holder_phone=order.guest_phone or (order.buyer.phone if order.buyer else ''),
+            )

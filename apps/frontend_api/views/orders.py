@@ -8,7 +8,11 @@ from rest_framework.response import Response
 from apps.orders.models import Order, OrderItem
 from apps.tickets.models import TicketCategory
 
+from django.shortcuts import get_object_or_404
+from apps.orders.models import Order
 from ..serializers.orders import OrderCreateSerializer, OrderSerializer
+
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 
 @api_view(['POST'])
@@ -35,8 +39,12 @@ def create_order(request):
 
         subtotal = locked_cat.price * quantity
 
+        # 🎯 V1 : si l'utilisateur est connecté, on lie la commande à son compte
+        buyer = request.user if request.user.is_authenticated else None
+
         order = Order.objects.create(
             match=match,
+            buyer=buyer,
             guest_first_name=data['first_name'],
             guest_last_name=data['last_name'],
             guest_email=data['email'],
@@ -58,3 +66,55 @@ def create_order(request):
         locked_cat.save(update_fields=['quantity_sold'])
 
     return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
+
+
+
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def simulate_payment(request, uuid):
+    """
+    Simule le paiement d'une commande (V1 — en attendant Wave).
+    Marque la commande PAID + génère les billets.
+    """
+    order = get_object_or_404(Order, uuid=uuid)
+    if order.status == Order.Status.PAID:
+        return Response(OrderSerializer(order).data)
+    if order.status != Order.Status.PENDING:
+        return Response(
+            {'error': f"Impossible de payer une commande {order.status}."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    order.mark_as_paid()
+    order.refresh_from_db()
+    return Response(OrderSerializer(order).data)
+
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_tickets(request):
+    """Retourne tous les billets du supporter connecté."""
+    from apps.tickets.models import Ticket
+    from ..serializers.tickets import TicketSerializer
+
+    # Récupère les IDs des commandes du user
+    order_ids = Order.objects.filter(buyer=request.user).values_list('id', flat=True)
+
+    # Récupère les tickets liés à ces commandes
+    tickets = (
+        Ticket.objects
+        .filter(order_id__in=order_ids)
+        .select_related(
+            'category',
+            'category__match',
+            'category__match__home_team',
+            'category__match__away_team',
+            'category__match__venue',
+        )
+        .order_by('-created_at')
+    )
+
+    return Response(TicketSerializer(tickets, many=True).data)

@@ -175,3 +175,11 @@ class Ticket(UUIDModel, TimeStampedModel):
     @property
     def match(self):
         return self.category.match
+
+    @property
+    def qr_data(self):
+        """
+        Payload encodé dans le QR code.
+        Format : STADIUM:<qr_token>
+        """
+        return f"STADIUM:{self.qr_token}"

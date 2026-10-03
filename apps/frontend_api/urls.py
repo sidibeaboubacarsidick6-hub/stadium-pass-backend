@@ -11,7 +11,9 @@ from .views import (
     TeamViewSet,
     create_order,
     me,
+    my_tickets,
     register,
+    simulate_payment,
 )
 
 router = DefaultRouter()
@@ -27,6 +29,8 @@ urlpatterns = [
 
     # Orders
     path('orders/', create_order, name='create-order'),
+    path('orders/<uuid:uuid>/simulate-pay/', simulate_payment, name='simulate-payment'),
+    path('my-tickets/', my_tickets, name='my-tickets'),
 
     # Resources
     path('', include(router.urls)),
