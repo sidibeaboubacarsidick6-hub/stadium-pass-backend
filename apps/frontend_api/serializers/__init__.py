@@ -1,3 +1,4 @@
+from .auth import RegisterSerializer, UserSerializer
 from .matches import (
     CompetitionSerializer,
     MatchDetailSerializer,
@@ -6,12 +7,14 @@ from .matches import (
     TicketCategorySerializer,
     VenueSerializer,
 )
+from .orders import OrderCreateSerializer, OrderSerializer
 
 __all__ = [
-    'CompetitionSerializer',
-    'MatchDetailSerializer',
-    'MatchListSerializer',
-    'TeamSerializer',
-    'TicketCategorySerializer',
-    'VenueSerializer',
+    # Auth
+    'RegisterSerializer', 'UserSerializer',
+    # Matches
+    'CompetitionSerializer', 'MatchDetailSerializer', 'MatchListSerializer',
+    'TeamSerializer', 'TicketCategorySerializer', 'VenueSerializer',
+    # Orders
+    'OrderCreateSerializer', 'OrderSerializer',
 ]
