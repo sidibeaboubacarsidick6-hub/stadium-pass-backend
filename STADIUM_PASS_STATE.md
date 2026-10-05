@@ -95,6 +95,8 @@ celery -A config worker -l info
 - Pas de paiement réel — l'order passe en PAID via simulate-pay/
 - L'email en dev utilise le backend console (rien n'est réellement envoyé)
 - Pour un vrai envoi : configurer SMTP (Brevo, Sendgrid, Mailgun...)
+- createOrder (front) DOIT envoyer le token → sinon commande en guest
+- my_tickets matche buyer OU guest_email (iexact) → tolérant aux 2 cas
 
 ## 📌 Prochaines étapes — Sprint 2
 
