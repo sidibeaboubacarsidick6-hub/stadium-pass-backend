@@ -8,6 +8,13 @@ from apps.core.models import TimeStampedModel, UUIDModel
 
 class Venue(TimeStampedModel, UUIDModel):
     """Un stade ou lieu de match."""
+    organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="venues",
+        help_text="Organisation propriétaire (null = donnée historique).",
+    )
 
     name = models.CharField("nom", max_length=200)
     address = models.TextField("adresse", blank=True)

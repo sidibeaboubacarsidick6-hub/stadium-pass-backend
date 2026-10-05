@@ -11,6 +11,14 @@ from apps.core.models import TimeStampedModel, UUIDModel
 class Team(TimeStampedModel, UUIDModel):
     """Une équipe / club de football."""
 
+    organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="teams",
+        help_text="Organisation propriétaire (null = donnée historique).",
+    )
+
     name = models.CharField("nom complet", max_length=200, unique=True)
     short_name = models.CharField(
         "nom court", max_length=50,

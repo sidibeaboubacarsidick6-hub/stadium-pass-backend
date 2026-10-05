@@ -9,6 +9,13 @@ from apps.core.models import TimeStampedModel, UUIDModel
 
 class Competition(TimeStampedModel, UUIDModel):
     """Une compétition (championnat, coupe, amical)."""
+    organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="competitions",
+        help_text="Organisation propriétaire (null = donnée historique).",
+    )
 
     class Type(models.TextChoices):
         CHAMPIONSHIP = 'championship', 'Championnat'

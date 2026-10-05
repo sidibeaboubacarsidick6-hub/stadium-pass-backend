@@ -9,6 +9,14 @@ from apps.core.models import TimeStampedModel, UUIDModel
 class Match(TimeStampedModel, UUIDModel):
     """Un match entre 2 équipes."""
 
+    organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="matches",
+        help_text="Organisation propriétaire (null = donnée historique).",
+    )
+
     class Status(models.TextChoices):
         DRAFT = 'draft', 'Brouillon'
         CONFIGURING = 'configuring', 'En configuration'
