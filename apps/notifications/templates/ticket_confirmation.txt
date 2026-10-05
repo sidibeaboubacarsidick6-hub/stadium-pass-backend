@@ -1,0 +1,20 @@
+STADIUM PASS — Confirmation de commande
+
+Bonjour {{ order.buyer_name|default:order.buyer_email }},
+
+Merci pour votre achat ! Commande {{ order.reference }} confirmée.
+
+MATCH
+{{ match.home_team.name }} vs {{ match.away_team.name }}
+{{ match.competition.name }} — {{ match.kickoff_at|date:"d/m/Y H:i" }}
+{{ match.venue.name }}, {{ match.venue.city }}
+
+VOS BILLETS ({{ tickets|length }})
+{% for ticket in tickets %}
+- {{ ticket.ticket_number }} — {{ ticket.category.name }} ({{ ticket.category.price|floatformat:0 }} FCFA)
+  Accès : Porte {{ ticket.category.gate.name|default:"—" }} · {{ ticket.category.block_label|default:"—" }}
+{% endfor %}
+
+Retrouvez tous vos billets sur {{ frontend_url }}/my-tickets
+
+— Stadium Pass

@@ -102,27 +102,27 @@ class Order(UUIDModel, TimeStampedModel):
             return self.buyer.full_name
         return f"{self.guest_first_name} {self.guest_last_name}".strip()
 
-    def mark_as_paid(self, payment_method='simulated', payment_reference=''):
+    def mark_as_paid(self, method="SIMULATED"):
+        """Marque la commande comme payée et génère les billets.
+        
+        NB : pas encore de champ payment_method/reference sur Order.
+        Ces infos seront ajoutées lors de l'intégration Wave/Orange Money.
         """
-        Marque la commande payée et génère les billets.
-        Idempotent : ne fait rien si déjà PAID.
-        """
-        from django.db import transaction
         from django.utils import timezone
 
-        with transaction.atomic():
-            locked = type(self).objects.select_for_update().get(pk=self.pk)
-            if locked.status == self.Status.PAID:
-                return False
+        if self.status == self.Status.PAID:
+            return
 
-            locked.status = self.Status.PAID
-            locked.paid_at = timezone.now()
-            locked.save(update_fields=['status', 'paid_at'])
+        self.status = self.Status.PAID
+        self.paid_at = timezone.now()
+        self.save(update_fields=["status", "paid_at", "updated_at"])
 
-            for item in locked.items.all():
-                item.generate_tickets()
+        # Génère un billet par unité commandée
+        for item in self.items.all():
+            item.generate_tickets()
 
-        return True
+        # TODO Fix 3 : send_ticket_confirmation_email.delay(self.id)
+
 
 class OrderItem(TimeStampedModel):
     """Ligne d'une commande (une catégorie de billets + quantité)."""

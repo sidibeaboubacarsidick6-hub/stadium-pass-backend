@@ -196,3 +196,18 @@ SIMPLE_JWT = {
 REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = [
     'rest_framework_simplejwt.authentication.JWTAuthentication',
 ]
+
+
+
+# Celery
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+CELERY_TASK_ALWAYS_EAGER = True  # dev : exécution synchrone (pas besoin de worker)
+CELERY_TIMEZONE = "Africa/Abidjan"
+
+# Email (dev : console)
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "Stadium Pass <no-reply@stadium-pass.ci>"
+
+
+FRONTEND_URL = "http://localhost:5173"

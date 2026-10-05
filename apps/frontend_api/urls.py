@@ -4,6 +4,7 @@ Stadium Pass — URLs API frontend.
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
+from apps.frontend_api.views.tickets import TicketPDFView
 
 from .views import (
     CustomTokenObtainPairView,
@@ -34,4 +35,6 @@ urlpatterns = [
 
     # Resources
     path('', include(router.urls)),
+    path("tickets/<uuid:ticket_uuid>/pdf/", TicketPDFView.as_view(), name="ticket-pdf"),
+
 ]
