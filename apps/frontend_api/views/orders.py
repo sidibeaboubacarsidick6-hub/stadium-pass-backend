@@ -101,7 +101,12 @@ def my_tickets(request):
     from ..serializers.tickets import TicketSerializer
 
     # Récupère les IDs des commandes du user
-    order_ids = Order.objects.filter(buyer=request.user).values_list('id', flat=True)
+    from django.db.models import Q
+    order_ids = (
+        Order.objects
+        .filter(Q(buyer=request.user) | Q(guest_email=request.user.email))
+        .values_list('id', flat=True)
+    )
 
     # Récupère les tickets liés à ces commandes
     tickets = (
