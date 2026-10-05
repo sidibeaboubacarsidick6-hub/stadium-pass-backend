@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'apps.audit',
     'apps.dashboard',
     'apps.frontend_api',
+    'apps.organizations',
 ]
 
 

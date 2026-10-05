@@ -57,6 +57,19 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel, UUIDModel):
 
     objects = UserManager()
 
+    is_organizer = models.BooleanField(
+        "organisateur",
+        default=False,
+        help_text="Peut gérer des matchs et compétitions via l'espace organisateur.",
+    )
+    organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="members",
+        help_text="Organisation de rattachement (si is_organizer).",
+    )
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
 
