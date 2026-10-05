@@ -10,3 +10,4 @@ celery
 redis
 django-celery-beat
 djangorestframework-simplejwt
+reportlab

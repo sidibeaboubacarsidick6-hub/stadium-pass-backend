@@ -117,4 +117,4 @@ def my_tickets(request):
         .order_by('-created_at')
     )
 
-    return Response(TicketSerializer(tickets, many=True).data)
+    return Response(TicketSerializer(tickets, many=True, context={'request': request}).data)

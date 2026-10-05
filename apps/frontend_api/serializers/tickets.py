@@ -16,6 +16,7 @@ class TicketSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     category_price = serializers.CharField(source='category.price', read_only=True)
     qr_data = serializers.CharField(read_only=True)
+    qr_code_image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Ticket
@@ -26,7 +27,7 @@ class TicketSerializer(serializers.ModelSerializer):
             'category_name', 'category_price',
             'gate_label', 'block_label',
             'holder_name', 'holder_email', 'holder_phone',
-            'qr_token', 'qr_data',
+            'qr_token', 'qr_data', 'qr_code_image_url',
             'status', 'created_at',
         ]
 
@@ -48,3 +49,11 @@ class TicketSerializer(serializers.ModelSerializer):
 
     def get_venue_city(self, obj):
         return obj.category.match.venue.city
+
+    def get_qr_code_image_url(self, obj):
+        if not obj.qr_code_image:
+            return None
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.qr_code_image.url)
+        return obj.qr_code_image.url

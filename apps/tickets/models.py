@@ -145,7 +145,14 @@ class Ticket(UUIDModel, TimeStampedModel):
         "jeton QR", default=uuid_lib.uuid4,
         unique=True, editable=False, db_index=True,
     )
-
+    qr_code_data = models.CharField(
+        "données QR", max_length=200, blank=True,
+        help_text="Payload encodé dans le QR (STADIUM:<qr_token>).",
+    )
+    qr_code_image = models.ImageField(
+        "image QR", upload_to='tickets/qr/%Y/%m/',
+        blank=True, null=True,
+    )
     # Statut
     status = models.CharField(
         "statut", max_length=20,
@@ -172,6 +179,16 @@ class Ticket(UUIDModel, TimeStampedModel):
     def __str__(self):
         return f"{self.ticket_number} — {self.category.name}"
 
+    def save(self, *args, **kwargs):
+        # Génère le payload QR s'il n'existe pas
+        if not self.qr_code_data:
+            self.qr_code_data = f"STADIUM:{self.qr_token}"
+        super().save(*args, **kwargs)
+        # Génère l'image QR après la 1ère sauvegarde
+        if not self.qr_code_image:
+            from .utils import generate_qr_image
+            generate_qr_image(self)
+
     @property
     def match(self):
         return self.category.match
@@ -182,4 +199,4 @@ class Ticket(UUIDModel, TimeStampedModel):
         Payload encodé dans le QR code.
         Format : STADIUM:<qr_token>
         """
-        return f"STADIUM:{self.qr_token}"
+        return self.qr_code_data or f"STADIUM:{self.qr_token}"
