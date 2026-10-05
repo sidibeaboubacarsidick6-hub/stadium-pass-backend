@@ -19,6 +19,7 @@ class OrganizerMatchViewSet(ModelViewSet):
             Match.objects
             .filter(organization=org)
             .select_related("home_team", "away_team", "venue", "competition")
+            .prefetch_related("ticket_categories")
             .order_by("-kickoff_at")
         )
 
@@ -27,5 +28,12 @@ class OrganizerMatchViewSet(ModelViewSet):
             return OrganizerMatchWriteSerializer
         return OrganizerMatchSerializer
 
-    def perform_create(self, serializer):
-        serializer.save(organization=self.request.user.organization)
+    def create(self, request, *args, **kwargs):
+        from rest_framework import status as http_status
+        from rest_framework.response import Response
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        match = serializer.save()
+        read_serializer = OrganizerMatchSerializer(match, context={"request": request})
+        return Response(read_serializer.data, status=http_status.HTTP_201_CREATED)
