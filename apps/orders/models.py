@@ -121,7 +121,9 @@ class Order(UUIDModel, TimeStampedModel):
         for item in self.items.all():
             item.generate_tickets()
 
-        # TODO Fix 3 : send_ticket_confirmation_email.delay(self.id)
+        # Envoi email de confirmation (via Celery)
+        from apps.notifications.tasks import send_ticket_confirmation_email
+        send_ticket_confirmation_email.delay(self.id)
 
 
 class OrderItem(TimeStampedModel):

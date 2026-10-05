@@ -2,7 +2,7 @@ STADIUM PASS — Confirmation de commande
 
 Bonjour {{ order.buyer_name|default:order.buyer_email }},
 
-Merci pour votre achat ! Commande {{ order.reference }} confirmée.
+Merci pour votre achat ! Commande {{ order.order_number }} confirmée.
 
 MATCH
 {{ match.home_team.name }} vs {{ match.away_team.name }}
