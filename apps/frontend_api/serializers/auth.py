@@ -7,14 +7,26 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 User = get_user_model()
 
 
+class OrganizationMiniSerializer(serializers.Serializer):
+    """Infos minimales sur l'organisation (pour le front)."""
+    id = serializers.IntegerField(read_only=True)
+    uuid = serializers.UUIDField(read_only=True)
+    name = serializers.CharField(read_only=True)
+    slug = serializers.SlugField(read_only=True)
+
+
 class UserSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
+    organization = OrganizationMiniSerializer(read_only=True)
 
     class Meta:
         model = User
         fields = [
             'id', 'uuid', 'email', 'first_name', 'last_name',
-            'phone', 'role', 'full_name', 'date_joined',
+            'phone', 'role', 'full_name',
+            'is_organizer',
+            'organization',
+            'date_joined',
         ]
         read_only_fields = fields
 
