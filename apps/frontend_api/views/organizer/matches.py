@@ -29,11 +29,18 @@ class OrganizerMatchViewSet(ModelViewSet):
         return OrganizerMatchSerializer
 
     def create(self, request, *args, **kwargs):
+        from django.db import IntegrityError
         from rest_framework import status as http_status
         from rest_framework.response import Response
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        match = serializer.save()
+        try:
+            match = serializer.save()
+        except IntegrityError as e:
+            return Response(
+                {"detail": f"Conflit de données : {e}"},
+                status=http_status.HTTP_400_BAD_REQUEST,
+            )
         read_serializer = OrganizerMatchSerializer(match, context={"request": request})
         return Response(read_serializer.data, status=http_status.HTTP_201_CREATED)

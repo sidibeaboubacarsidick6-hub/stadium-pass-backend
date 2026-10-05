@@ -85,12 +85,42 @@ class OrganizerMatchWriteSerializer(serializers.ModelSerializer):
             )
         return attrs
 
+    def validate_ticket_categories(self, value):
+        """Vérifie qu'il n'y a pas de doublon de nom."""
+        names = [c["name"].strip().lower() for c in value]
+        if len(names) != len(set(names)):
+            raise serializers.ValidationError(
+                "Chaque catégorie doit avoir un nom unique."
+            )
+        for c in value:
+            if not c["name"].strip():
+                raise serializers.ValidationError(
+                    "Le nom de catégorie ne peut pas être vide."
+                )
+            if c["price"] <= 0:
+                raise serializers.ValidationError(
+                    "Le prix doit être supérieur à 0."
+                )
+            if c["total_quantity"] <= 0:
+                raise serializers.ValidationError(
+                    "La quantité doit être supérieure à 0."
+                )
+        return value
+
     def create(self, validated_data):
+        from django.db import IntegrityError
+        from rest_framework import serializers as drf_serializers
+
         categories_data = validated_data.pop("ticket_categories")
         org = self.context["request"].user.organization
-        match = Match.objects.create(organization=org, **validated_data)
-        for i, cat_data in enumerate(categories_data):
-            TicketCategory.objects.create(match=match, order=i, **cat_data)
+        try:
+            match = Match.objects.create(organization=org, **validated_data)
+            for i, cat_data in enumerate(categories_data):
+                TicketCategory.objects.create(match=match, order=i, **cat_data)
+        except IntegrityError as e:
+            raise drf_serializers.ValidationError(
+                f"Conflit de données : {e}"
+            )
         return match
 
     def update(self, instance, validated_data):
