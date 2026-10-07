@@ -10,7 +10,13 @@ from apps.core.models import TimeStampedModel, UUIDModel
 
 class Team(TimeStampedModel, UUIDModel):
     """Une équipe / club de football."""
-
+    sport = models.ForeignKey(
+        "sports.Sport",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="teams",
+        help_text="Sport pratiqué (null pour compat historique).",
+    )
     organization = models.ForeignKey(
         "organizations.Organization",
         on_delete=models.SET_NULL,

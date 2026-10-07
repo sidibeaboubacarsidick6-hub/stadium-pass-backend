@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'apps.dashboard',
     'apps.frontend_api',
     'apps.organizations',
+    'apps.sports',
 ]
 
 

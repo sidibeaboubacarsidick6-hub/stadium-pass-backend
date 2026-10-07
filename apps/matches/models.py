@@ -8,7 +8,14 @@ from apps.core.models import TimeStampedModel, UUIDModel
 
 class Match(TimeStampedModel, UUIDModel):
     """Un match entre 2 équipes."""
-
+    sport = models.ForeignKey(
+        "sports.Sport",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="matches",
+        help_text="Sport du match (null pour compat historique).",
+    )
+    
     organization = models.ForeignKey(
         "organizations.Organization",
         on_delete=models.SET_NULL,
