@@ -1,11 +1,11 @@
 # ⚽ STADIUM PASS — État du projet
 
-**Dernière mise à jour :** 2026-10-05
+**Dernière mise à jour :** 2026-10-07
 **Concept :** Billetterie football (Côte d'Ivoire) — test v0 avant intégration IvoirPass Sport
 
 ## 🔗 Repos GitHub
-- Frontend : https://github.com/sidibeaboubacarsidick6-hub/stadium-pass-frontend (commit 513ae7a)
-- Backend  : https://github.com/sidibeaboubacarsidick6-hub/stadium-pass-backend  (commit à venir)
+- Frontend : https://github.com/sidibeaboubacarsidick6-hub/stadium-pass-frontend (commit f3ae408)
+- Backend  : https://github.com/sidibeaboubacarsidick6-hub/stadium-pass-backend  (commit 24307a0)
 
 ## 📁 Chemins locaux
 - Frontend : ~/stadium-pass/project/
@@ -17,50 +17,56 @@
 
 ## ✅ Sprint 1 — TERMINÉ
 
-### Étape 1 — Auth JWT
-- simplejwt 5.5.1
-- /api/v1/auth/register/ , /login/ , /refresh/ , /me/
-- Frontend : src/lib/auth.ts (pub/sub), src/lib/api.ts
-- User de test : sidibeaboubacarsidick6@gmail.com / stadium2026 (buyer_id=2)
+| Étape | Contenu |
+|---|---|
+| 1 | Auth JWT (register/login/refresh/me) |
+| 2 | Paiement simulé (mark_as_paid + tickets auto) |
+| 3 | Mes billets (GET /my-tickets/) |
+| 4 | Actions client (PDF, calendrier .ics, imprimer) |
+| 5 | PDF billet (ReportLab A5 + endpoint) |
+| 6 | QR code réel (qrcode[PIL], vert #0a5c3a) |
+| 7 | Email confirmation Celery (HTML + TXT + PDF + QR inline) |
 
-### Étape 2 — Paiement simulé
-- Order.mark_as_paid() (dans la classe Order, PAS au niveau module)
-- POST /api/v1/orders/<uuid>/simulate-pay/
-- create_order lie buyer=request.user si authentifié
+**Fix bug my-tickets** : createOrder envoie le JWT + my_tickets matche buyer OU guest_email.
 
-### Étape 3 — Mes billets
-- GET /api/v1/my-tickets/ (IsAuthenticated)
-- TicketSerializer expose qr_code_image_url
+## ✅ Sprint 2 — Organizer : 6/6 phases
 
-### Étape 4 — Actions client
-- src/lib/ticket-adapter.ts : Ticket → props TicketCard
-- src/lib/ics.ts : génération .ics (Google/Apple)
-- 3 boutons : PDF, Calendrier, Imprimer
+### Phase 1 — Modèle Organization
+- `apps/organizations/` : Organization (nom, slug auto, owner FK, contact, branding)
+- `apps/accounts/` : is_organizer (bool) + organization (FK)
 
-### Étape 5 — PDF billet ✅
-- Backend : apps/tickets/utils.py → generate_ticket_pdf() (ReportLab A5 paysage)
-- Vue : apps/frontend_api/views/tickets.py → TicketPDFView (JWT + owner check)
-- URL : GET /api/v1/tickets/<uuid>/pdf/
-- Frontend : src/lib/api.ts → downloadTicketPdf() (fetch + Blob)
-- src/pages/MyTicketsPage.tsx → handleDownloadPdf réel
+### Phase 2 — FK organization sur modèles
+- `Competition`, `Match`, `Venue`, `Team` : + organization (FK, null)
 
-### Étape 6 — QR code réel ✅
-- apps/tickets/models.py : qr_code_data + qr_code_image (migration 0002)
-- apps/tickets/utils.py : generate_qr_image() (qrcode[PIL], vert #0a5c3a)
-- MEDIA_URL + MEDIA_ROOT config + static serving en dev
+### Phase 3 — Permission + endpoints CRUD backend
+- `apps/accounts/permissions.py` : IsOrganizer
+- Endpoints : `/api/v1/organizer/{dashboard,matches,competitions,venues,teams}/`
+- Filtre auto par user.organization
 
-### Étape 7 — Email confirmation ✅
-- Celery 5.4.0 + Redis
-- config/celery.py + __init__.py
-- Celery settings : CELERY_TASK_ALWAYS_EAGER=True en dev (synchrone)
-- apps/notifications/tasks.py : send_ticket_confirmation_email
-- Templates HTML + TXT : apps/notifications/templates/emails/
-- Email : sujet avec emoji, PDF attaché + QR inline (Content-ID)
-- mark_as_paid() appelle .delay()
+### Phase 4 — Layout + Dashboard frontend
+- `/organizer` : sidebar + garde route + dashboard KPIs
+
+### Phase 5 — Pages CRUD frontend
+- `/organizer/matches` : table + Actions (crayon/poubelle)
+- `/organizer/competitions` : table + création inline
+- `/organizer/venues` : table + création inline
+- `/organizer/teams` : table + création inline
+
+### Phase 6 — Formulaire création/édition match
+- `/organizer/matches/new` : formulaire complet
+- `/organizer/matches/<uuid>/edit` : édition
+- Catégories de billets dynamiques (ajouter/supprimer)
+- Backend : TicketCategoryNestedSerializer, create/update transactionnels
+
+### Réglages A/B — Édition + suppression
+- Actions crayon/poubelle dans la table
+- Confirm natif + DELETE API
+- Refus si billets déjà vendus
+- `lookup_field = 'uuid'` sur les 4 ViewSets → fix 404
 
 ## 🚀 Pour relancer
 
-### Redis (à démarrer une fois)
+### Redis
 sudo service redis-server start
 redis-cli ping   # → PONG
 
@@ -71,45 +77,40 @@ python manage.py runserver 8000
 
 ### Frontend (terminal 2)
 cd ~/stadium-pass/project
-npm run dev    # Doit être sur http://localhost:5173/
+npm run dev    # → http://localhost:5173/
 
 ⚠️ Si Vite démarre sur 5174 : pkill -f vite && npm run dev
 
-### Worker Celery (optionnel en dev, obligatoire en prod)
-celery -A config worker -l info
-
 ## ⚙️ Configuration importante
 
-- CELERY_TASK_ALWAYS_EAGER = True → email envoyé en synchrone en dev
-  (pas besoin de worker, l'email apparaît dans la console Django)
-- EMAIL_BACKEND = console → en dev, l'email s'affiche dans le terminal
+- CELERY_TASK_ALWAYS_EAGER = True → email synchrone en dev (console Django)
+- EMAIL_BACKEND = console → rien n'est réellement envoyé en dev
 - FRONTEND_URL = http://localhost:5173
 - MEDIA_ROOT = backend/media/
-- CORS autorise UNIQUEMENT localhost:5173 (pas 5174)
+- CORS autorise UNIQUEMENT localhost:5173
 - SQLite en dev, Postgres à prévoir en preprod
 
-## 🔴 Points d'attention
+## 🔑 Comptes de test
 
-- Le CORS backend autorise UNIQUEMENT localhost:5173 (pas 5174)
-- Le backend utilise SQLite en dev (pas encore Postgres)
-- Pas de paiement réel — l'order passe en PAID via simulate-pay/
-- L'email en dev utilise le backend console (rien n'est réellement envoyé)
-- Pour un vrai envoi : configurer SMTP (Brevo, Sendgrid, Mailgun...)
-- createOrder (front) DOIT envoyer le token → sinon commande en guest
-- my_tickets matche buyer OU guest_email (iexact) → tolérant aux 2 cas
+| Email | Mdp | Rôle |
+|---|---|---|
+| sidibeaboubacarsidick6@gmail.com | stadium2026 | Supporter |
+| ledix2024@gmail.com | stadium2026 | Organizer (Ligue Test) |
+| test@test.ci | test1234 | Non-organizer (pour tester le 403) |
 
-## 📌 Prochaines étapes — Sprint 2
+## 📌 Prochaines étapes — Sprint 3
 
 | # | Tâche | Effort |
 |---|---|---|
-| 1 | Intégration paiement Wave / Orange Money | 2-3 j |
-| 2 | Dashboard club (back-office) | 2-3 j |
-| 3 | Dashboard admin MKS | 2-3 j |
-| 4 | Déploiement preprod Stadium Pass | 1 j |
+| 1 | Intégration paiement Wave | 2-3 j |
+| 2 | Intégration Orange Money | 1-2 j |
+| 3 | Upload logos (équipes, compétitions, stades) | 0.5 j |
+| 4 | Champs sale_start_at / sale_end_at dans le form | 0.5 j |
+| 5 | Déploiement preprod (Postgres + SMTP réel) | 1 j |
 
 ## 🎯 Triggers pour reprendre
 - « ⚽ Stadium Pass — Wave »
 - « ⚽ Stadium Pass — Orange Money »
-- « ⚽ Stadium Pass — dashboard »
+- « ⚽ Stadium Pass — upload logos »
 - « ⚽ Stadium Pass — déploiement »
-- « ⚽ Stadium Pass — suite Sprint 2 »
+- « ⚽ Stadium Pass — réglages organizer »
