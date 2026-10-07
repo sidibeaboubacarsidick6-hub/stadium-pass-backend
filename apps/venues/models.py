@@ -16,6 +16,16 @@ class Venue(TimeStampedModel, UUIDModel):
         help_text="Organisation propriétaire (null = donnée historique).",
     )
 
+    zone_template = models.JSONField(
+        "zones par défaut",
+        default=list, blank=True,
+        help_text=(
+            "Template des zones pour ce lieu. Format : "
+            '[{"name": "Virage Nord", "capacity": 5000, "price_base": 1000}, ...]. '
+            "Copié dans les catégories de billets à la création d'un match."
+        ),
+    )
+
     name = models.CharField("nom", max_length=200)
     address = models.TextField("adresse", blank=True)
     city = models.CharField("ville", max_length=100)
