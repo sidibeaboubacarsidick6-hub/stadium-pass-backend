@@ -49,10 +49,13 @@ class OrganizerMatchSerializer(serializers.ModelSerializer):
             {
                 "id": c.id,
                 "name": c.name,
+                "description": c.description,
                 "price": str(c.price),
                 "total_quantity": c.total_quantity,
                 "quantity_sold": c.quantity_sold,
                 "remaining": c.remaining,
+                "max_per_order": c.max_per_order,
+                "block_label": c.block_label,
             }
             for c in obj.ticket_categories.all().order_by("order")
         ]
@@ -124,6 +127,23 @@ class OrganizerMatchWriteSerializer(serializers.ModelSerializer):
         return match
 
     def update(self, instance, validated_data):
-        # v0 : update du match seul, les catégories se gèrent à part
-        validated_data.pop("ticket_categories", None)
-        return super().update(instance, validated_data)
+        from django.db import IntegrityError
+        from rest_framework import serializers as drf_serializers
+
+        # Sécurité : refus si billets déjà vendus
+        from apps.tickets.models import Ticket
+        if Ticket.objects.filter(category__match=instance).exists():
+            raise drf_serializers.ValidationError(
+                "Impossible de modifier ce match : des billets sont déjà vendus."
+            )
+
+        categories_data = validated_data.pop("ticket_categories", None)
+        try:
+            instance = super().update(instance, validated_data)
+            if categories_data is not None:
+                instance.ticket_categories.all().delete()
+                for i, cat_data in enumerate(categories_data):
+                    TicketCategory.objects.create(match=instance, order=i, **cat_data)
+        except IntegrityError as e:
+            raise drf_serializers.ValidationError(f"Conflit de données : {e}")
+        return instance

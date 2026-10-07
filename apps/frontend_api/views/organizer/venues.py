@@ -10,6 +10,7 @@ from ...serializers.organizer import OrganizerVenueSerializer
 class OrganizerVenueViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, IsOrganizer]
     serializer_class = OrganizerVenueSerializer
+    lookup_field = "uuid"
 
     def get_queryset(self):
         return (

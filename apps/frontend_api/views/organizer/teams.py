@@ -10,6 +10,7 @@ from ...serializers.organizer import OrganizerTeamSerializer
 class OrganizerTeamViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, IsOrganizer]
     serializer_class = OrganizerTeamSerializer
+    lookup_field = "uuid"
 
     def get_queryset(self):
         return (
